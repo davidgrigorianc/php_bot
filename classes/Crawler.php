@@ -1,11 +1,7 @@
 <?php
 
 class Crawler{
-    public $start_url;
-    public $baseUrl;
-    public $urls = array();
-    public $crawled_urls = array();
-    public $errors;
+    public $start_url, $baseUrl,$crawled_urls = array(), $errors=array();
     
     public function __construct($url){
         $this->setUrl($url);
