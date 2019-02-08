@@ -19,4 +19,17 @@ class Page extends Db{
         LIMIT 10;";
         return $this->query($query);
     }
+    
+    public function savePage($content,$title,$url,$baseUrl,$parent_id){
+        $query = ("INSERT INTO pages(content, title ,url, baseurl ,parent_id) 
+        VALUES('$content','$title','$url','$baseUrl','$parent_id')");
+        return $this->query($query);
+    }
+    
+    public function getByUrl($param) {
+        $query = "SELECT id FROM pages WHERE url = $url";
+        return $this->query($query);
+    }
+    
+    
 }
