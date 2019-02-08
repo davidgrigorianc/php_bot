@@ -1,13 +1,17 @@
 <?php
-
 class Crawler{
-    public $start_url, $baseUrl,$crawled_urls = array(), $errors=array();
+    public $Page;
+    public $start_url,$active_url, $parent_id, $baseUrl , $limit, $crawled_urls = array(), $errors=array();
     
-    public function __construct($url){
+    public function __construct($url, $limit){
+        ini_set('max_execution_time', 90);
+        $this->Page = new Page();
         $this->setUrl($url);
+        $this->limit = $limit;
     }
     
     private function setUrl($url) {
+       
         if($this->isUrlCorrect($url)){
             $this->start_url = $url;
             $this->baseUrl = $this->baseUrl($url);
@@ -36,6 +40,7 @@ class Crawler{
     }
     
     public function getHtml($url) {
+        $this->active_url = $url;
         $ch = curl_init();
         if($this->isUrlCorrect($url)) {               
             curl_setopt($ch, CURLOPT_URL,$url);
@@ -44,8 +49,7 @@ class Crawler{
             curl_setopt($ch, CURLOPT_AUTOREFERER, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
             $html = curl_exec($ch);
-            if($html) {
-                $this->crawled_urls[] = $url;
+            if($html) {               
                 return $html;
             }
         }
@@ -57,11 +61,16 @@ class Crawler{
         $dom = new DOMDocument;
         libxml_use_internal_errors(true);
         $dom->loadHTML($html);
-        $links = $dom->getElementsByTagName('a');   
+        $links = $dom->getElementsByTagName('a');
+        
+        $content = $this->getText($dom);
+        $title = $this->getTitle($dom);
+        $this->savePage($content,$title);
+        
         $urls = array();
         foreach ($links as $key => $link) {
             $url = $link->getattribute('href');
-             $url = rtrim($url, "/");
+            $url = rtrim($url, "/");
                 $url = rtrim($url, "#");
             if(!$this->isExternal($url)){             
                 $url = $this->checkedInternal($url);
@@ -76,27 +85,68 @@ class Crawler{
        
     }
     
+    private function savePage($content,$title) {
+        $url =  $this->active_url;
+        $baseUrl = $this->baseUrl;
+        $parent_id = $this->parent_id;
+        $save = $this->Page->savePage($content,$title,$url,$baseUrl,$parent_id);
+        if($save['success']){
+            $this->parent_id = $save['insert_id'];
+        }
+        return $save['success'];
+    }
     
     
-    private function getAllLinks($start_url, $depth = 0) {        
+    private function crawlAllLinks($start_url, $depth = 0) {    
         $html = $this->getHtml($start_url);
+        if($html){
+            $this->crawled_urls[] = $start_url;
+        }
         $urls = $this->collectLinks($html);
         foreach ($urls as $key => $url) {
             $this->pageUrls = $url; 
-            if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url))){
+            if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $depth <= $this->limit){
                 $checkedUrl = $this->checkedInternal($url);
-                $this->getAllLinks($checkedUrl,$depth++);
+                $this->crawlAllLinks($checkedUrl,$depth++);
             }            
         }
         
-        
     }
     
-    public function init() {
-        $this->getAllLinks($this->baseUrl);
+   
+    
+    private function getText($dom) {
+        $xpath = new DOMXPath($dom);
+        $textnodes = $xpath->query('//text()[normalize-space() and not(ancestor::a | ancestor::script | ancestor::style)]');
+        $text = '';
+        $numTextNodes = $textnodes->length;
+        for ($i = 0; $i < $numTextNodes; $i++) {
+            $node = $textnodes->item($i);
+            $textContent = ' '  . $node->textContent;
+            $textContent = preg_replace('/[^\w\d]+/m', ' ', $textContent);
+            $text .= $textContent;
+        }
+        return strtolower($text);
+    }
+    
+    private function getTitle($dom){
+        $title = '';
+        $list = $dom->getElementsByTagName("title");
+      
+        if ($list->length > 0) {
+            $title = $list->item(0)->textContent;
+        }
+        return $title;
+    }
+
+     public function init() {
+        $this->crawlAllLinks($this->start_url);
         return  $this->crawled_urls;
     }
-    
+
+//    public function savetoDb($title, $content, $url, $parent_id = null) {
+//        
+//    }
     
     
 }
