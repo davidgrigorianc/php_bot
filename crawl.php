@@ -25,7 +25,10 @@ require 'classes/Model/Page.php';
                         if($crawled_pages){ 
                             echo  '<a href="search.php">Go to search Page</a>';
                         }else{
-                             echo  '<p>Url is not correct</p>';
+                            $errors  = $crawler->getErrors();
+                            foreach ($errors as $key => $value) {
+                                echo "$key: $value";
+                            }
                             echo  '<a href="search.php">Go to search Page</a>';
                         }
                     }else{
