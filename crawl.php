@@ -2,19 +2,38 @@
 
 require 'classes/Crawler.php';
 require 'classes/Model/Page.php';
-
-    $url = $_POST['url'];
-    if(!empty($url)){
-        $crawler = new Crawler($url,10);
-        $crawled_pages = $crawler->init();
-        if($crawled_pages){
-            echo count($crawled_pages).' crawled';
-        }
-    }
     
 //    
 //    $page = new Page();
 //    $term = 'trova';
 //    $a = $page->search($term);
 //    var_dump($a);
+?>
+<!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <title>Crowled pages</title>
+            </head>
+            <body>
+                <?php
+
+                    if(isset($_POST['url']) && !empty($_POST['url'])){
+                        $url = $_POST['url'];
+                        echo '<h1>Crawling in process</h1>';
+                        $crawler = new Crawler($url,360);
+                        $crawled_pages = $crawler->init();
+//                        if($crawled_pages){
+//                            var_dump(count($crawled_pages));die;
+//                        }else{
+//                            var_dump($crawler->getErrors());
+//                        } 
+                    }
+                    ?>
+            </body>
+        </html>
+
+
+   
+        
+
     
