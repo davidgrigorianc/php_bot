@@ -22,13 +22,13 @@ require 'classes/Model/Page.php';
                         echo '<h1>Crawling in process</h1>';
                         $crawler = new Crawler($url,360);
                         $crawled_pages = $crawler->init();
-//                        if($crawled_pages){
-//                            var_dump(count($crawled_pages));die;
-//                        }else{
-//                            var_dump($crawler->getErrors());
-//                        } 
+                        if($crawled_pages){ ?>
+                            
+                       <?php  
+                        }
                     }
                     ?>
+                
             </body>
         </html>
 
