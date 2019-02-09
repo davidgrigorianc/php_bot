@@ -187,7 +187,7 @@ class Crawler{
     protected function _printResult($content, $title, $url, $depth, $parent_id){
         ob_end_flush();
         $count = count($this->crawled_urls);
-        echo "N::$count,Url::$url,DEPTH::$depth, parent_id::$parent_id <br>";
+        echo "N::$count,Url::$url,DEPTH::$depth <br>";
         ob_start();
         flush();
     }
