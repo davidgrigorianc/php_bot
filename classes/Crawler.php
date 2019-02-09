@@ -35,6 +35,21 @@ class Crawler{
         return filter_var($url, FILTER_VALIDATE_URL);        
     }
     
+    private function url_exists($url){
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch); 
+        if($httpcode>=200 && $httpcode<300){
+                return true;
+        } else {
+                return false;
+        }
+    }
+    
     private function isExternal($url) {        
         return (!empty(parse_url($url, PHP_URL_HOST)) && parse_url($url, PHP_URL_HOST) != parse_url($this->baseUrl, PHP_URL_HOST) );     
     }
@@ -74,12 +89,16 @@ class Crawler{
                     $url = $this->checkedInternal($url);
                 }
                 if($this->isUrlCorrect($url)){               
-                    if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url))){
+                    if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $this->url_exists($url) && !$this->isMailTo($url)){
                         $this->crawlPage($url, $parent_id, $depth++);
                     }  
                 }
                  
         }       
+    }
+    
+    private function isMailTo($url) {
+        return (strpos($url, 'mailto:'));
     }
     
     private function crawlPage($url,$parent_id, $depth) { 
