@@ -6,17 +6,27 @@ class Page extends Db{
         parent::__construct();
     }
     
-    public function search($term) {
-        $query = "SELECT * FROM
+    public function search($keywords) {
+        $keywords = explode(" ", $_POST['search']);
+        $query1 = "WHERE title LIKE '%".$keywords[0]."%'";
+        $query2 = "WHERE content LIKE '%".$keywords[0]."%'";
+        for($i = 1; $i < count($keywords); $i++) {
+            if(!empty($keywords[$i])) {
+                $query1 .= " OR title like '%" . $keywords[$i] . "%'";
+                $query2 .= " OR content like '%" . $keywords[$i] . "%'";
+            }
+        }
+        $query = "SELECT id, title, content, url FROM
         ( 
-           SELECT 1 AS rnk,  id, parent_id, title as 'desc', content, url FROM pages 
-           WHERE title LIKE '%".$term."%'
+           SELECT 1 AS rnk, title, content, url, id FROM pages 
+           $query1
            UNION 
-           SELECT 2 AS rnk,  id, parent_id, title as 'desc', content, url FROM pages 
-           WHERE content LIKE '%".$term."%' 
+           SELECT 2 AS rnk, title, content, url, id FROM pages 
+           $query2
         ) tab
         ORDER BY rnk
         LIMIT 10;";
+        
         return $this->query($query);
     }
     
