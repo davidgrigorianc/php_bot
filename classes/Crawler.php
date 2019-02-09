@@ -1,22 +1,27 @@
 <?php
 class Crawler{
     public $Page;
-    public $start_url,$active_url, $parent_id, $baseUrl , $limit, $crawled_urls = array(), $errors=array();
+    public $start_url,$active_url,$depth = 0, $parent_id, $baseUrl , $limit ,$crawled_urls = array(), $errors=array();
     
-    public function __construct($url, $limit){
-        ini_set('max_execution_time', 90);
+    public function __construct($url, $max_execution){
+        // set maximum execution time
+        ini_set('max_execution_time', $max_execution);
+        // model page
         $this->Page = new Page();
+        //setting given url
         $this->setUrl($url);
-        $this->limit = $limit;
+//        $this->limit = $limit;
     }
     
     private function setUrl($url) {
-       
-        if($this->isUrlCorrect($url)){
+        //check is url correct
+        if($this->isUrlCorrect($url)){            
             $this->start_url = $url;
+            // setting baseurl for checking is url internal
             $this->baseUrl = $this->baseUrl($url);
         }else{
-             $this->errors['url'][] = 'url is incorrect';
+            //collect errors
+            $this->errors['url'][] = 'url is incorrect';
         }
     }
     private function baseUrl($url) {
@@ -26,14 +31,16 @@ class Crawler{
         return "$scheme$host";
     }
     private function isUrlCorrect($url){  
+        // checking is url correct if yes returning true
         return filter_var($url, FILTER_VALIDATE_URL);        
     }
     
-    private function isExternal($url) {
+    private function isExternal($url) {        
         return (!empty(parse_url($url, PHP_URL_HOST)) && parse_url($url, PHP_URL_HOST) != parse_url($this->baseUrl, PHP_URL_HOST) );     
     }
     
     private function checkedInternal($url) {
+        // return internal url in baseurl+
         if(!$this->isExternal($url)){            
             return (!empty(parse_url($url, PHP_URL_HOST))) ? $url : $this->baseUrl.$url;
         }      
@@ -53,65 +60,70 @@ class Crawler{
                 return $html;
             }
         }
+        unset($html);
         return false;;
         
     }
     
-    private function collectLinks($html){
+    private function processLinks($links,$depth,$parent_id){     
+        foreach ($links as $key => $link) {
+                $url = $link->getattribute('href');
+                $url = rtrim($url, "/");
+                $url = rtrim($url, "#");
+                if(!$this->isExternal($url)){             
+                    $url = $this->checkedInternal($url);
+                }
+                if($this->isUrlCorrect($url)){               
+                    if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url))){
+                        $this->crawlPage($url, $parent_id, $depth++);
+                    }  
+                }
+                 
+        }       
+    }
+    
+    private function crawlPage($url,$parent_id, $depth) { 
+        $url = $this->checkedInternal($url);
+        $html = $this->getHtml($url);        
+        $this->crawled_urls[] = $url;
         $dom = new DOMDocument;
         libxml_use_internal_errors(true);
         $dom->loadHTML($html);
         $links = $dom->getElementsByTagName('a');
-        
         $content = $this->getText($dom);
         $title = $this->getTitle($dom);
-        $this->savePage($content,$title);
-        
-        $urls = array();
-        foreach ($links as $key => $link) {
-            $url = $link->getattribute('href');
-            $url = rtrim($url, "/");
-                $url = rtrim($url, "#");
-            if(!$this->isExternal($url)){             
-                $url = $this->checkedInternal($url);
-            }
-            if($this->isUrlCorrect($url)){               
-                if(!in_array($url, $this->crawled_urls)){
-                    $urls[] = $url;
-                }
-            }
-        }
-        return $urls;
-       
-    }
-    
-    private function savePage($content,$title) {
-        $url =  $this->active_url;
         $baseUrl = $this->baseUrl;
-        $parent_id = $this->parent_id;
-        $save = $this->Page->savePage($content,$title,$url,$baseUrl,$parent_id);
-        if($save['success']){
-            $this->parent_id = $save['insert_id'];
+        $parent_id = $this->savePageToDB($content,$title,$url,$depth,$baseUrl,$parent_id);    
+        if($depth == 0){
+            $depth++;
         }
-        return $save['success'];
-    }
-    
-    
-    private function crawlAllLinks($start_url, $depth = 0) {    
-        $html = $this->getHtml($start_url);
-        if($html){
-            $this->crawled_urls[] = $start_url;
-        }
-        $urls = $this->collectLinks($html);
-        foreach ($urls as $key => $url) {
-            $this->pageUrls = $url; 
-            if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $depth <= $this->limit){
-                $checkedUrl = $this->checkedInternal($url);
-                $this->crawlAllLinks($checkedUrl,$depth++);
-            }            
-        }
+        if(!empty($links)){
+             $this->processLinks($links,$depth,$parent_id);   
+        }            
         
     }
+    
+    
+    
+    
+    
+    private function savePageToDB($content,$title,$url,$depth,$baseUrl,$parent_id) {
+        
+        $this->_printResult($content, $title, $url, $depth, $parent_id);
+        
+        $db_page = $this->Page->getByUrl($url);
+        if(isset($db_page["rows"][0]['id'])){
+            return $db_page["rows"][0]['id'];
+        }
+        
+        $save = $this->Page->savePage($content,$title,$url,$baseUrl,$depth,$parent_id);
+        
+        if($save['success']){
+            return $save['insert_id'];
+        }
+    }
+    
+   
     
    
     
@@ -139,14 +151,26 @@ class Crawler{
         return $title;
     }
 
-     public function init() {
-        $this->crawlAllLinks($this->start_url);
-        return  $this->crawled_urls;
+     
+    
+    public function getErrors() {
+        return $this->errors;
+    }
+    
+    
+    
+    public function init() {
+        $start_url = rtrim($this->start_url, "/");
+        $this->crawlPage($start_url,$this->parent_id , $depth = 0);
     }
 
-//    public function savetoDb($title, $content, $url, $parent_id = null) {
-//        
-//    }
+    protected function _printResult($content, $title, $url, $depth, $parent_id){
+        ob_end_flush();
+        $count = count($this->crawled_urls);
+        echo "N::$count,Url::$url,DEPTH::$depth, parent_id::$parent_id <br>";
+        ob_start();
+        flush();
+    }
     
     
 }
