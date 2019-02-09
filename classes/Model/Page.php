@@ -36,10 +36,13 @@ class Page extends Db{
         return $this->query($query);
     }
     
-    public function getByUrl($url) {
+    public function selectAll() {
+        $query = "SELECT id, parent_id, title, url, baseurl, LEFT(content, 200) AS content, depth FROM pages ORDER BY parent_id, depth";
+        return $this->query($query);
+    }
+     public function getByUrl($url) {
         $query = "SELECT id FROM pages WHERE url = '$url' LIMIT 1";
         return $this->query($query);
     }
-    
     
 }
