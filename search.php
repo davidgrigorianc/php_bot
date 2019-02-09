@@ -6,6 +6,7 @@ require 'classes/Model/Page.php';
 <!DOCTYPE html>
         <html lang="en">
             <head>
+                
                  <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -23,6 +24,7 @@ require 'classes/Model/Page.php';
                     <input type="submit" value="Search">
                 </form>
                 <?php
+                
                     function highlightKeywords($text, $keyword) {
                         $wordsArr = explode(" ", $keyword);
                         $wordsCount = count($wordsArr);
@@ -48,7 +50,7 @@ require 'classes/Model/Page.php';
                            <article class="search-result row">
                                <div class="col-xs-12 col-sm-12 col-md-7 excerpet">
                                   <a href="<?php echo $value['url'] ?>"> <h3><?php echo highlightKeywords($value['title'], $_POST['search'])  ?> </h3><p><?php echo $value['url'] ?></p> </a>
-                                    <p><?php echo highlightKeywords($value['content'], $_POST['search'])  ?></p>
+                                    <p><?php echo html_entity_decode (highlightKeywords($value['content'], $_POST['search']))  ?></p>
                                            
                                </div>                                                
                            </article>

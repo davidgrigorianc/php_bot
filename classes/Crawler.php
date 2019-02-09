@@ -82,18 +82,17 @@ class Crawler{
     
     private function processLinks($links,$depth,$parent_id){     
         foreach ($links as $key => $link) {
-                $url = $link->getattribute('href');
-                $url = rtrim($url, "/");
-                $url = rtrim($url, "#");
-                if(!$this->isExternal($url)){             
-                    $url = $this->checkedInternal($url);
-                }
-                if($this->isUrlCorrect($url)){               
-                    if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $this->url_exists($url) && !$this->isMailTo($url)){
-                        $parent_id = $this->active_id;
-                        $this->crawlPage($url, $parent_id, $depth++);
-                    }  
-                }
+            $url = $link->getattribute('href');
+            $url = rtrim($url, "/");
+            $url = rtrim($url, "#");
+            if(!$this->isExternal($url)){             
+                $url = $this->checkedInternal($url);
+            }
+            if($this->isUrlCorrect($url)){               
+                if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $this->url_exists($url) && !$this->isMailTo($url)){
+                    $this->crawlPage($url,  $this->active_id, $depth++);
+                }  
+            }
                  
         }       
     }
@@ -113,7 +112,7 @@ class Crawler{
         $content = $this->getText($dom);
         $title = $this->getTitle($dom);
         $baseUrl = $this->baseUrl;
-        $parent_id = $this->savePageToDB($content,$title,$url,$depth,$baseUrl,$parent_id);    
+        $this->savePageToDB($content,$title,$url,$depth,$baseUrl,$parent_id);    
         if($depth == 0){
             $depth++;
         }
@@ -181,7 +180,8 @@ class Crawler{
     
     public function init() {
         $start_url = rtrim($this->start_url, "/");
-        $this->crawlPage($start_url,$this->parent_id , $depth = 0);
+        if(!$this->isUrlCorrect($start_url)) return;
+        $this->crawlPage($start_url, $this->active_id  , $depth = 0);
     }
 
     protected function _printResult($content, $title, $url, $depth, $parent_id){

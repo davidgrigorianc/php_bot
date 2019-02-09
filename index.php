@@ -14,7 +14,7 @@
                 <form action="crawl.php" method="post">
                     <div class="field">
                             <label for="url">Url</label>
-                            <input type="text" name="url" id="url_input" autocomplete="off">
+                            <input type="text" name="url" id="url_input" autocomplete="off" placeholder="https://www.example.ru/">
                     </div>
                     <input type="submit" value="Scrape">
                 </form>

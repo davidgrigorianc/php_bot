@@ -22,13 +22,18 @@ require 'classes/Model/Page.php';
                         echo '<h1>Crawler</h1>';
                         $crawler = new Crawler($url,360);
                         $crawled_pages = $crawler->init();
-                        if($crawled_pages){ ?>
-                        <a href="search.php">Go to search Page</a>
-                       <?php  
+                        if($crawled_pages){ 
+                            echo  '<a href="search.php">Go to search Page</a>';
+                        }else{
+                             echo  '<p>Url is not correct</p>';
+                            echo  '<a href="search.php">Go to search Page</a>';
                         }
+                    }else{
+                        header('Location: index.php');
+
                     }
                     ?>
-                
+                        <a href="index.php"> Back </a>
             </body>
         </html>
 
