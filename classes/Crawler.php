@@ -90,7 +90,7 @@ class Crawler{
             }
             if($this->isUrlCorrect($url)){               
                 if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $this->url_exists($url) && !$this->isMailTo($url)){
-                    $this->crawlPage($url,  $this->active_id, $depth++);
+                    $this->crawlPage($url,  $parent_id, $depth++);
                 }  
             }
                  
@@ -112,12 +112,12 @@ class Crawler{
         $content = $this->getText($dom);
         $title = $this->getTitle($dom);
         $baseUrl = $this->baseUrl;
-        $this->savePageToDB($content,$title,$url,$depth,$baseUrl,$parent_id);    
+        $parent_id = $this->savePageToDB($content,$title,$url,$depth,$baseUrl,$parent_id);    
         if($depth == 0){
             $depth++;
         }
-        if(!empty($links)){
-             $this->processLinks($links,$depth,$parent_id);   
+        if(is_array($links)){
+            array_walk($links,  $this->processLinks($links,$depth,$parent_id));
         }            
         
     }
