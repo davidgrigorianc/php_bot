@@ -1,7 +1,7 @@
 <?php
 class Crawler{
     public $Page;
-    public $start_url,$active_url,$depth = 0, $parent_id, $baseUrl , $limit ,$crawled_urls = array(), $errors=array();
+    public $start_url,$active_url,$depth,$active_id, $parent_id, $baseUrl , $limit ,$crawled_urls = array(), $errors=array();
     
     public function __construct($url, $max_execution){
         // set maximum execution time
@@ -90,6 +90,7 @@ class Crawler{
                 }
                 if($this->isUrlCorrect($url)){               
                     if(!in_array($url, $this->crawled_urls) && !($this->isExternal($url)) && $this->url_exists($url) && !$this->isMailTo($url)){
+                        $parent_id = $this->active_id;
                         $this->crawlPage($url, $parent_id, $depth++);
                     }  
                 }
